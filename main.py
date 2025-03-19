@@ -1,24 +1,18 @@
-from flask import Flask, request, jsonify
 import pickle
-import joblib
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Load your trained model
-model = joblib.load("model.pkl")
-vectorizer = joblib.load("vectorizer.pkl")
+# Load the trained model
+with open("model.pkl", "rb") as f:
+    model = pickle.load(f)
 
-@app.route('/')
-def home():
-    return "Spam Detection Model API"
-
-@app.route('/predict', methods=['POST'])
+@app.route("/predict", methods=["POST"])
 def predict():
-    data = request.json['text']
-    transformed_text = vectorizer.transform([data])
-    prediction = model.predict(transformed_text)[0]
-    return jsonify({'prediction': 'Spam' if prediction == 1 else 'Not Spam'})
+    data = request.json["text"]
+    prediction = model.predict([data])[0]
+    return jsonify({"spam": bool(prediction)})
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+if __name__ == "__main__":
+    app.run(debug=True)
 
