@@ -1,25 +1,32 @@
+from flask import Flask, request, jsonify
 import joblib
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-import pandas as pd
 
-# Load dataset
-data = pd.read_csv("spam_ham_dataset.csv")
+app = Flask(__name__)  # ✅ Ensure Flask app is initialized
 
-# Use the correct column names
-X = data["text"]  # Change "text" to the actual column name
-y = data["label"]  # Change "label" to the actual column name (0 = Ham, 1 = Spam)
+# ✅ Load the trained model and vectorizer
+try:
+    model = joblib.load("spam_model.pkl")
+    vectorizer = joblib.load("vectorizer.pkl")
+except FileNotFoundError:
+    print("❌ Model or vectorizer file not found. Ensure 'spam_model.pkl' and 'vectorizer.pkl' exist.")
 
-# Convert text data into numerical form using TF-IDF
-vectorizer = TfidfVectorizer()
-X_transformed = vectorizer.fit_transform(X)
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        data = request.get_json()
+        text = data.get("text", "")
 
-# Train the Naïve Bayes model
-model = MultinomialNB()
-model.fit(X_transformed, y)
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
 
-# Save the model and vectorizer
-joblib.dump(model, "spam_model.pkl")
-joblib.dump(vectorizer, "vectorizer.pkl")
+        # ✅ Transform input text and make prediction
+        transformed_text = vectorizer.transform([text])
+        prediction = model.predict(transformed_text)[0]
 
-print("✅ Model and vectorizer saved successfully!")
+        return jsonify({"prediction": "spam" if prediction == 1 else "ham"})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)  # ✅ Run Flask app locally
