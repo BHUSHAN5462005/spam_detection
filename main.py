@@ -16,16 +16,30 @@ except Exception as e:
 def predict():
     try:
         data = request.json["text"]
+<<<<<<< HEAD
         transformed_data = vectorizer.transform([data]) 
         transformed_data = transformed_data.toarray() # Convert text using TF-IDF
+=======
+        transformed_data = vectorizer.transform([data])  # Convert text using TF-IDF
+>>>>>>> 17b3694ad5bf78c70c2f24a12043b6d4bf67532d
         prediction = model.predict(transformed_data)[0]
         return jsonify({"spam": bool(prediction)})
     except Exception as e:
         print(f"❌ Prediction error: {e}")
         return jsonify({"error": "Internal Server Error"}), 500
+<<<<<<< HEAD
 
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+=======
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+
+>>>>>>> 17b3694ad5bf78c70c2f24a12043b6d4bf67532d
 
