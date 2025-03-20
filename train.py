@@ -6,7 +6,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import train_test_split
 
 # Load dataset
-data = pd.read_csv("spam.csv", encoding="latin1")
+data = pd.read_csv("spam_ham_dataset.csv", encoding="latin1")
 
 # Preprocess text
 def clean_text(text):
@@ -14,10 +14,10 @@ def clean_text(text):
     text = re.sub(r'\W+', ' ', text)  # Remove special characters
     return text
 
-data["message"] = data["message"].astype(str).apply(clean_text)
+data["text"] = data["text"].astype(str).apply(clean_text)
 
 # Train-test split
-X_train, X_test, y_train, y_test = train_test_split(data["message"], data["label"], test_size=0.2)
+X_train, X_test, y_train, y_test = train_test_split(data["text"], data["label"], test_size=0.2)
 
 # Convert text to TF-IDF
 vectorizer = TfidfVectorizer()
