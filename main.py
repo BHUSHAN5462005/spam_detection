@@ -45,21 +45,22 @@ def predict():
         if not isinstance(text_input, str):
             return jsonify({"error": "Invalid input, expected a text string"}), 400
 
-        # Preprocess Text (Apply `.lower()` here **before vectorizing**)
+        # Preprocess Text (Apply `.lower()` **before vectorizing**)
         text_input = text_input.strip().lower()
 
         print(f"🔹 Processed Input: {text_input}")  # Debugging log
 
-        # Vectorize Input (Ensure input is a list of strings)
-        transformed_data = vectorizer.transform([text_input])  # **List with one string**
-
+        # Ensure the vectorizer expects a string (Pipeline safe)
+        transformed_data = vectorizer.transform([text_input])  # **Pass list of strings**
+        
         print(f"✅ Transformed Data Shape: {transformed_data.shape}")  # Debugging log
 
-        # Convert CSR matrix to Dense Array before passing to model
-        transformed_data_dense = transformed_data.toarray()  # Convert to numpy array
+        # If vectorizer output is sparse, convert to dense
+        if hasattr(transformed_data, "toarray"):
+            transformed_data = transformed_data.toarray()  # Convert to dense if needed
 
         # Make Prediction
-        prediction = model.predict(transformed_data_dense)[0]
+        prediction = model.predict(transformed_data)[0]
         result = bool(prediction)
 
         print(f"✅ Prediction Result: {result}")  # Debugging log
