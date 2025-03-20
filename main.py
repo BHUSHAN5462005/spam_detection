@@ -3,27 +3,28 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Try loading the model and vectorizer with error handling
+# Load model and vectorizer
 try:
     with open("model.pkl", "rb") as f:
-        model = pickle.load(f)
-    with open("vectorizer.pkl", "rb") as f:
-        vectorizer = pickle.load(f)
+        model = pickle.load(f)  # This might already include vectorizer
 except Exception as e:
-    print(f"❌ Error loading model or vectorizer: {e}")
-    model = None
-    vectorizer = None
+    print(f"❌ Error loading model: {e}")
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if model is None or vectorizer is None:
-        return jsonify({"error": "Model or vectorizer not loaded"}), 500
-
     try:
-        data = request.json["text"]
-        transformed_data = vectorizer.transform([data])  # Convert text using TF-IDF
-        transformed_data = transformed_data.toarray()  # Ensure it is an array
-        prediction = model.predict(transformed_data)[0]
+        # Ensure data is received correctly
+        data = request.get_json()
+        if not data or "text" not in data:
+            return jsonify({"error": "Invalid request, 'text' key is required"}), 400
+        
+        text_input = data["text"]  # Extract the text
+        if not isinstance(text_input, str):
+            return jsonify({"error": "Invalid input, expected a string"}), 400
+        
+        # Directly predict without manually transforming the input
+        prediction = model.predict([text_input])[0]
+        
         return jsonify({"spam": bool(prediction)})
     except Exception as e:
         print(f"❌ Prediction error: {e}")
