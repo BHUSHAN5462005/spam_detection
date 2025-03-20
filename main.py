@@ -4,12 +4,16 @@ import traceback  # Helps capture detailed error logs
 
 app = Flask(__name__)
 
-# Load model and vectorizer
+# Load Model and Vectorizer
 try:
     with open("model.pkl", "rb") as f:
         model = pickle.load(f)
+
     with open("vectorizer.pkl", "rb") as f:
-        vectorizer = pickle.load(f)  # Ensure TF-IDF Vectorizer is loaded
+        vectorizer = pickle.load(f)
+
+    print("✅ Model and Vectorizer loaded successfully.")
+
 except Exception as e:
     print(f"❌ Error loading model/vectorizer: {e}")
     traceback.print_exc()
@@ -30,12 +34,17 @@ def predict():
         if not isinstance(text_input, str) or not text_input.strip():
             return jsonify({"error": "Invalid input, expected a non-empty string"}), 400
 
+        # Preprocess Text (Ensure it's in proper format)
+        text_input = text_input.lower().strip()  # Convert text to lowercase
+
         # Transform text using TF-IDF vectorizer
         transformed_data = vectorizer.transform([text_input])
-        transformed_data = transformed_data.toarray()  # Convert to dense array
 
-        # Predict
-        prediction = model.predict(transformed_data)[0]
+        # Convert sparse matrix to dense array
+        transformed_data_dense = transformed_data.toarray()
+
+        # Predict using the trained model
+        prediction = model.predict(transformed_data_dense)[0]
 
         return jsonify({"spam": bool(prediction)})
 
