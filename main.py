@@ -45,7 +45,8 @@ def predict():
         if not isinstance(text_input, str):
             return jsonify({"error": "Invalid input, expected a text string"}), 400
 
-        text_input = text_input.strip().lower()  # Preprocess text
+        # Preprocess Text (Lowercase before vectorizing)
+        text_input = text_input.strip().lower()
 
         print(f"🔹 Processed Input: {text_input}")  # Debugging log
 
@@ -54,9 +55,12 @@ def predict():
 
         print(f"✅ Transformed Data Shape: {transformed_data.shape}")  # Debugging log
 
+        # Convert CSR matrix to Dense Array before passing to model
+        transformed_data_dense = transformed_data.toarray()  # Convert to numpy array
+
         # Make Prediction
-        prediction = model.predict(transformed_data)  # Directly use transformed_data (not .toarray())
-        result = bool(prediction[0])
+        prediction = model.predict(transformed_data_dense)[0]
+        result = bool(prediction)
 
         print(f"✅ Prediction Result: {result}")  # Debugging log
 
@@ -66,7 +70,7 @@ def predict():
         print(f"❌ Prediction error: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({"error": "Internal Server Error"}), 500
+        return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500  # Return full error in response
 
 # Run Flask App
 if __name__ == "__main__":
