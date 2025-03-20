@@ -1,79 +1,47 @@
-import pickle
-import os
 from flask import Flask, request, jsonify
+import joblib
+import numpy as np
+from scipy.sparse import csr_matrix
 
 app = Flask(__name__)
 
-# Load Model and Vectorizer
-try:
-    if not os.path.exists("model.pkl") or not os.path.exists("vectorizer.pkl"):
-        raise FileNotFoundError("❌ Model or Vectorizer file not found!")
+# Load the trained model and vectorizer
+model = joblib.load("spam_model.pkl")
+vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
-    with open("model.pkl", "rb") as f:
-        model = pickle.load(f)
-
-    with open("vectorizer.pkl", "rb") as f:
-        vectorizer = pickle.load(f)
-
-    print("✅ Model and Vectorizer loaded successfully!")
-
-except Exception as e:
-    print(f"❌ Error loading model/vectorizer: {e}")
-    vectorizer, model = None, None  # Prevent execution if loading fails
-
-# Health Check Route
-@app.route("/", methods=["GET"])
-def home():
-    return "Spam Detection API is running!", 200
-
-# Prediction Route
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Ensure model and vectorizer are loaded
-        if model is None or vectorizer is None:
-            return jsonify({"error": "Model or vectorizer not loaded"}), 500
-
-        # Parse Request
+        # Get the input JSON
         data = request.get_json()
-        if not data or "text" not in data:
-            return jsonify({"error": "Invalid request, 'text' key is required"}), 400
 
-        text_input = data["text"]
+        # Extract text input
+        input_text = data.get('text', '')
 
-        # Ensure text_input is a string
-        if not isinstance(text_input, str):
-            return jsonify({"error": "Invalid input, expected a text string"}), 400
+        # Validate input
+        if not isinstance(input_text, str):
+            return jsonify({'error': 'Invalid input format. Expected a string.'}), 400
 
-        # Preprocess Text (Apply `.lower()` **before vectorizing**)
-        text_input = text_input.strip().lower()
+        # Ensure input is a list of strings before TF-IDF transformation
+        transformed_data = vectorizer.transform([input_text])
 
-        print(f"🔹 Processed Input: {text_input}")  # Debugging log
+        # Ensure transformed data is in correct format
+        if isinstance(transformed_data, np.ndarray):
+            transformed_data = csr_matrix(transformed_data)  # Convert to sparse matrix if needed
 
-        # Ensure the vectorizer expects a string (Pipeline safe)
-        transformed_data = vectorizer.transform([text_input])  # **Pass list of strings**
-        
-        print(f"✅ Transformed Data Shape: {transformed_data.shape}")  # Debugging log
+        # Debugging logs
+        print(f"✅ Transformed Data Type: {type(transformed_data)}")
+        print(f"✅ Transformed Data Shape: {transformed_data.shape}")
 
-        # If vectorizer output is sparse, convert to dense
-        if hasattr(transformed_data, "toarray"):
-            transformed_data = transformed_data.toarray()  # Convert to dense if needed
-
-        # Make Prediction
+        # Make a prediction
         prediction = model.predict(transformed_data)[0]
-        result = bool(prediction)
 
-        print(f"✅ Prediction Result: {result}")  # Debugging log
-
-        return jsonify({"spam": result})
+        # Return prediction result
+        return jsonify({'prediction': prediction})
 
     except Exception as e:
-        print(f"❌ Prediction error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500  # Return full error in response
+        print(f"❌ Prediction error: {str(e)}")  # Print error in logs
+        return jsonify({'error': str(e)}), 500
 
-# Run Flask App
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(debug=True)
