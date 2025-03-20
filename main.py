@@ -45,13 +45,13 @@ def predict():
         if not isinstance(text_input, str):
             return jsonify({"error": "Invalid input, expected a text string"}), 400
 
-        # Preprocess Text (Lowercase before vectorizing)
+        # Preprocess Text (Apply `.lower()` here **before vectorizing**)
         text_input = text_input.strip().lower()
 
         print(f"🔹 Processed Input: {text_input}")  # Debugging log
 
         # Vectorize Input (Ensure input is a list of strings)
-        transformed_data = vectorizer.transform([text_input])  # List with one string
+        transformed_data = vectorizer.transform([text_input])  # **List with one string**
 
         print(f"✅ Transformed Data Shape: {transformed_data.shape}")  # Debugging log
 
