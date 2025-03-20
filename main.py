@@ -10,6 +10,11 @@ try:
 except Exception as e:
     print(f"❌ Error loading model: {e}")
 
+# Root route to check if API is running
+@app.route("/", methods=["GET"])
+def home():
+    return "Spam Detection API is running!", 200
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
