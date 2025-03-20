@@ -34,6 +34,7 @@ def predict():
     try:
         # Check if model and vectorizer are loaded
         if model is None or vectorizer is None:
+            print("❌ Model or Vectorizer is not loaded properly!")
             return jsonify({"error": "Model or vectorizer not loaded"}), 500
 
         # Parse Request
@@ -44,21 +45,20 @@ def predict():
         text_input = data["text"]
 
         # Validate Input
-        if not isinstance(text_input, str) or not text_input.strip():
-            return jsonify({"error": "Invalid input, expected a non-empty string"}), 400
+        if not isinstance(text_input, str):
+            return jsonify({"error": "Invalid input, expected a text string"}), 400
 
-        print(f"🔹 Received Input: {text_input}")  # Debugging log
+        text_input = text_input.strip().lower()  # Ensure it's clean text
 
-        # Preprocess Input
-        text_input = text_input.lower().strip()
+        print(f"🔹 Processed Input: {text_input}")  # Debugging log
 
         # Vectorize Input
         transformed_data = vectorizer.transform([text_input])
-        print(f"✅ Transformed Data: {transformed_data}")  # Debugging log
 
-        # Convert Sparse Matrix to Dense
+        # Ensure it's in the correct format
         transformed_data_dense = transformed_data.toarray()
-        print(f"✅ Dense Data: {transformed_data_dense}")  # Debugging log
+
+        print(f"✅ Dense Data Shape: {transformed_data_dense.shape}")  # Debugging log
 
         # Make Prediction
         prediction = model.predict(transformed_data_dense)[0]
