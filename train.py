@@ -3,22 +3,20 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import pandas as pd
 
-# Load dataset
-data = pd.read_csv("spam_ham_dataset.csv")
+# 1️⃣ Load dataset (replace with your dataset)
+data = pd.read_csv("spam_ham_dataset.csv")  # Ensure you have a dataset
+X = data["text"]  # Replace with actual column name
+y = data["label"]    # Replace with actual column name (0 = Ham, 1 = Spam)
 
-# Use the correct column names
-X = data["text"]  # Change "text" to the actual column name
-y = data["label"]  # Change "label" to the actual column name (0 = Ham, 1 = Spam)
-
-# Convert text data into numerical form using TF-IDF
+# 2️⃣ Convert text data into numerical form using TF-IDF
 vectorizer = TfidfVectorizer()
 X_transformed = vectorizer.fit_transform(X)
 
-# Train the Naïve Bayes model
+# 3️⃣ Train the Naïve Bayes model
 model = MultinomialNB()
 model.fit(X_transformed, y)
 
-# Save the model and vectorizer
+# 4️⃣ Save the model and vectorizer
 joblib.dump(model, "spam_model.pkl")
 joblib.dump(vectorizer, "vectorizer.pkl")
 
