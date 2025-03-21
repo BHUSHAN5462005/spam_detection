@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import joblib
-
+import os
 app = Flask(__name__)  # ✅ Ensure Flask app is initialized
 
 # ✅ Load the trained model and vectorizer
@@ -27,6 +27,7 @@ def predict():
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 if __name__ == '__main__':
-    app.run(debug=True)  # ✅ Run Flask app locally
+    port = int(os.environ.get("PORT", 5000))  # Get port from Render
+    app.run(host="0.0.0.0", port=port)  # Bind to all IPs
