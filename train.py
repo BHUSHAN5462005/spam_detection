@@ -1,36 +1,55 @@
 import pandas as pd
 import re
 import joblib
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import classification_report, accuracy_score
+
+# Download necessary NLTK resources
+nltk.download("stopwords")
+nltk.download("wordnet")
 
 # Load dataset
 data = pd.read_csv("spam_ham_dataset.csv", encoding="latin1")
 
-# Preprocess text
+# Verify labels
+print("Unique labels in dataset:", data["label"].unique())
+
+# Convert labels if necessary
+data["label"] = data["label"].map({"spam": 1, "ham": 0})
+
+# Ensure no missing values
+data = data.dropna()
+
+# Text Preprocessing Function
+stop_words = set(stopwords.words("english"))
+lemmatizer = WordNetLemmatizer()
+
 def clean_text(text):
     text = text.lower()  # Convert to lowercase
     text = re.sub(r'\W+', ' ', text)  # Remove special characters
-    text = re.sub(r'\s+', ' ', text).strip()  # Remove extra spaces
+    text = " ".join([lemmatizer.lemmatize(word) for word in text.split() if word not in stop_words])  # Lemmatization
     return text
 
 data["text"] = data["text"].astype(str).apply(clean_text)
 
-# Map labels correctly
-data["label"] = data["label"].map({"spam": 1, "ham": 0})
+# Print a few processed texts
+print("Sample processed texts:", data["text"].head())
 
-# Train-test split (Ensure balanced training)
-X_train, X_test, y_train, y_test = train_test_split(data["text"], data["label"], test_size=0.2, random_state=42, stratify=data["label"])
+# Train-test split (stratified)
+X_train, X_test, y_train, y_test = train_test_split(data["text"], data["label"], test_size=0.2, stratify=data["label"], random_state=42)
 
-# Convert text to TF-IDF (Increase features slightly but avoid overfitting)
-vectorizer = TfidfVectorizer(max_features=8000, ngram_range=(1,2), stop_words='english')  # Added stop words removal
+# Convert text to TF-IDF
+vectorizer = TfidfVectorizer(stop_words=None, ngram_range=(1,2), min_df=2)
 X_train_vec = vectorizer.fit_transform(X_train)
 X_test_vec = vectorizer.transform(X_test)
 
-# Train model (Adjust alpha to prevent overfitting)
-model = MultinomialNB(alpha=0.1)  # Increased alpha slightly to avoid false positives
+# Train model
+model = MultinomialNB()
 model.fit(X_train_vec, y_train)
 
 # Evaluate model
@@ -44,10 +63,17 @@ joblib.dump(model, "spam_model.pkl")
 joblib.dump(vectorizer, "vectorizer.pkl")
 print("✅ Model and vectorizer saved successfully!")
 
-# ✅ Sanity Check: Test model with both spam and ham
-test_texts = ["Congratulations! You won a free iPhone 15", "hi", "Hello, how are you?", "Click here to win $$$!"]
-transformed_texts = vectorizer.transform(test_texts)
-predictions = model.predict(transformed_texts)
+# Testing with sample inputs
+test_texts = [
+    "Congratulations! You won a free iPhone 15",
+    "hi",
+    "Hello, how are you?",
+    "Click here to win $$$!",
+    "Your order has been shipped, tracking number is 12345",
+    "Claim your free Bitcoin now!"
+]
 
-for text, pred in zip(test_texts, predictions):
-    print(f"Test: '{text}' → Prediction: {'spam' if pred == 1 else 'ham'}")  # ✅ "hi" should now be "ham"
+for text in test_texts:
+    transformed_text = vectorizer.transform([clean_text(text)])
+    prediction = model.predict(transformed_text)[0]
+    print(f"Test: '{text}' → Prediction: {'spam' if prediction == 1 else 'ham'}")
