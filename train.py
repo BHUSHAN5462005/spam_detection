@@ -63,9 +63,9 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"✅ Model Accuracy: {accuracy:.4f}")
 print(classification_report(y_test, y_pred))
 
-# 🔹 Save the model and vectorizer
+# 🔹 Save the model and vectorizer (fix naming issue)
 joblib.dump(model, "spam_model.pkl")
-joblib.dump(vectorizer, "vectorizer.pkl")
+joblib.dump(vectorizer, "tfidf_vectorizer.pkl")  # 🔥 Fix: Now matches API loading
 print("✅ Model and vectorizer saved successfully!")
 
 # 🔹 Quick test predictions
